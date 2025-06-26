@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz de Banco de Dados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 15px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        .question-card {
+            background-color: #fefefe;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        .question-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .option-label:hover {
+            background-color: #f0f8ff;
+            border-color: #a7d9ff;
+        }
+        .option-label input[type="radio"] {
+            margin-right: 12px;
+            accent-color: #3498db;
+        }
+        .submit-button, .navigation-button {
+            display: block;
+            width: 100%;
+            padding: 14px 20px;
+            background-color: #3498db;
+            color: white;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+        .submit-button:hover, .navigation-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        .submit-button:disabled, .navigation-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .result-area {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .result-correct {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .result-incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .result-area ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 15px;
+            text-align: left;
+        }
+        .result-area ul li {
+            margin-bottom: 8px;
+        }
+        .correct-answer-text {
+            color: #1e8b2b;
+            font-weight: 700;
+        }
+        .incorrect-answer-text {
+            color: #a00;
+            font-weight: 700;
+            text-decoration: line-through;
+        }
+        .feedback {
+            margin-top: 10px;
+            font-size: 0.95rem;
+            color: #555;
+            text-align: left; /* Alinhar o feedback à esquerda */
+            padding-top: 8px;
+            border-top: 1px solid #eee;
+            margin-top: 15px;
+        }
+        .score-display {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #34495e;
+        }
+        .pagination-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 10px; /* Espaçamento entre os botões */
+        }
+        .page-info {
+            flex-grow: 1;
+            text-align: center;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* Estilos para feedback imediato */
+        .option-label.correct {
+            background-color: #e6ffe6; /* Light green */
+            border-color: #4CAF50;
+        }
+        .option-label.incorrect {
+            background-color: #ffe6e6; /* Light red */
+            border-color: #F44336;
+        }
+
+        /* Responsividade para telas menores */
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                padding: 10px;
+            }
+            .question-title {
+                font-size: 1.1rem;
+            }
+            .option-label {
+                padding: 10px;
+                font-size: 0.95rem;
+            }
+            .submit-button, .navigation-button {
+                font-size: 1rem;
+                padding: 12px 15px;
+            }
+            .pagination-controls {
+                flex-direction: column;
+            }
+            .page-info {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center mb-6 text-blue-700">Quiz de Banco de Dados</h1>
+
+        <div id="quiz-container">
+            <!-- As questões serão carregadas aqui via JavaScript -->
+        </div>
+
+        <div class="pagination-controls">
+            <button id="prev-page" class="navigation-button w-1/2 md:w-auto">Anterior</button>
+            <span id="page-info" class="page-info"></span>
+            <button id="next-page" class="navigation-button w-1/2 md:w-auto">Próximo</button>
+        </div>
+
+        <button id="submit-quiz" class="submit-button mt-6 hidden">Verificar Respostas</button> <!-- Este botão será escondido -->
+        <button id="restart-quiz" class="submit-button mt-4 hidden">Reiniciar Quiz</button>
+
+        <div id="results" class="result-area hidden">
+            <div id="score" class="score-display"></div>
+            <ul id="answers-summary"></ul>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "Qual propriedade ACID garante que uma transação é executada como uma única unidade de trabalho, onde ou todas as operações são concluídas com sucesso ou nenhuma delas é?",
+                options: [
+                    "a) Consistência",
+                    "b) Durabilidade",
+                    "c) Atomicidade",
+                    "d) Isolamento"
+                ],
+                answer: "c) Atomicidade",
+                feedback: "A Atomicidade (Tudo ou Nada) garante que todas as operações de uma transação sejam concluídas ou nenhuma seja, mantendo a integridade do banco de dados."
+            },
+            {
+                question: "Em um banco de dados MongoDB, como você consultaria clientes ativos que têm um endereço residencial em 'São Paulo'?",
+                options: [
+                    "a) db.clientes.find({ ativo: true, 'enderecos.cidade': 'São Paulo', 'enderecos.tipo': 'residencial' })",
+                    "b) db.clientes.query({ ativo: true, enderecos: { $and: [{ cidade: 'São Paulo' }, { tipo: 'residencial' }] } })",
+                    "c) db.clientes.find({ ativo: true, enderecos: { $elemMatch: { tipo: 'residencial', cidade: 'São Paulo' } } })",
+                    "d) db.clientes.filter({ ativo: true }).where('enderecos.cidade').equals('São Paulo').and('enderecos.tipo').equals('residencial')"
+                ],
+                answer: "c) db.clientes.find({ ativo: true, enderecos: { $elemMatch: { tipo: 'residencial', cidade: 'São Paulo' } } })",
+                feedback: "A opção correta utiliza '$elemMatch' para garantir que um único elemento dentro do array 'enderecos' corresponda a ambas as condições (tipo residencial E cidade São Paulo)."
+            },
+            {
+                question: "Qual das seguintes abordagens é considerada nativa do SQL Server para implementar auditoria em uma tabela?",
+                options: [
+                    "a) Lógica na Camada de Aplicação",
+                    "b) Uso de Stored Procedures sem triggers",
+                    "c) Triggers no Banco de Dados",
+                    "d) Implementação via Webhooks"
+                ],
+                answer: "c) Triggers no Banco de Dados",
+                feedback: "Triggers são um recurso nativo do SQL Server (e de outros SGBDs relacionais) que são executados automaticamente em resposta a eventos DML, como UPDATEs."
+            },
+            {
+                question: "Na técnica de recuperação de 'Atualização Adiada' (Deferred Update), o que acontece com as modificações de uma transação não confirmada (sem COMMIT) no disco após uma falha?",
+                options: [
+                    "a) Elas são desfeitas (UNDO) para restaurar o estado anterior.",
+                    "b) Elas são mantidas, pois já foram escritas no disco.",
+                    "c) Elas são simplesmente ignoradas, pois nunca foram gravadas no disco.",
+                    "d) Elas são refeitas (REDO) automaticamente."
+                ],
+                answer: "c) Elas são simplesmente ignoradas, pois nunca foram gravadas no disco.",
+                feedback: "Na Atualização Adiada, as modificações só são gravadas no disco após o COMMIT da transação. Se não houve COMMIT, não há o que desfazer no disco."
+            },
+            {
+                question: "Considere duas transações (t1 e t2) debitando de uma mesma conta. Qual dos escalonamentos abaixo é considerado adequado para manter a integridade do banco de dados (serializável)?",
+                options: [
+                    "I. t1(r), t1(w), t2(r), t2(w)",
+                    "II. t2(r), t2(w), t1(r), t1(w)",
+                    "III. t2(r), t1(r), t1(w), t2(w)",
+                    "a) Somente I é adequado.",
+                    "b) Somente I e II são adequados.",
+                    "c) Somente III é adequado.",
+                    "d) Somente I e III são adequados."
+                ],
+                answer: "b) Somente I e II são adequados.",
+                feedback: "Os escalonamentos I e II são seriais, garantindo que o resultado final seja o mesmo como se as transações fossem executadas uma após a outra. Os outros causam perda de atualização ou leitura suja."
+            },
+            {
+                question: "Qual é a principal função de um `ROLLBACK` em uma transação T-SQL?",
+                options: [
+                    "a) Salvar permanentemente as alterações no banco de dados.",
+                    "b) Confirmar o início de uma nova transação.",
+                    "c) Desfazer todas as modificações feitas desde o `BEGIN TRANSACTION`.",
+                    "d) Ignorar erros durante a execução da transação."
+                ],
+                answer: "c) Desfazer todas as modificações feitas desde o `BEGIN TRANSACTION`.",
+                feedback: "O `ROLLBACK` é usado para reverter o banco de dados ao estado em que estava antes do início da transação, garantindo a atomicidade."
+            },
+            {
+                question: "Em MongoDB, qual é a estrutura básica de armazenamento de dados?",
+                options: [
+                    "a) Tabelas com linhas e colunas",
+                    "b) Grafos com nós e arestas",
+                    "c) Documentos (JSON-like) em coleções",
+                    "d) Chave-valor simples"
+                ],
+                answer: "c) Documentos (JSON-like) em coleções",
+                feedback: "MongoDB é um banco de dados NoSQL orientado a documentos, onde os dados são armazenados em formato BSON (similar a JSON) dentro de coleções."
+            },
+            {
+                question: "Qual a principal vantagem de utilizar `Stored Procedures` no SQL Server?",
+                options: [
+                    "a) Permitem o uso de joins complexos em consultas NoSQL.",
+                    "b) Aumentam a dependência da aplicação no SGBD.",
+                    "c) Melhoram a performance por serem pré-compiladas e atuam como mecanismo de segurança.",
+                    "d) Permitem o acesso direto ao sistema de arquivos do servidor."
+                ],
+                answer: "c) Melhoram a performance por serem pré-compiladas e atuam como mecanismo de segurança.",
+                feedback: "Stored Procedures são pré-compiladas, o que otimiza a performance, e centralizam a lógica de negócios no banco de dados, aumentando a segurança e modularidade."
+            },
+            {
+                question: "A propriedade `Durabilidade` (D de ACID) de uma transação garante que:",
+                options: [
+                    "a) O banco de dados passe de um estado inconsistente para outro consistente.",
+                    "b) As modificações de uma transação confirmada persistam no BD, mesmo após falhas.",
+                    "c) As transações concorrentes não interfiram entre si.",
+                    "d) Todas as operações de uma transação sejam concluídas ou nenhuma seja."
+                ],
+                answer: "b) As modificações de uma transação confirmada persistam no BD, mesmo após falhas.",
+                feedback: "A Durabilidade assegura que, uma vez que uma transação é confirmada (committed), suas alterações são permanentes e resistem a falhas do sistema."
+            },
+            {
+                question: "Qual o principal objetivo de um `View` no SQL Server?",
+                options: [
+                    "a) Armazenar dados fisicamente em um novo local no disco.",
+                    "b) Criar um índice para otimizar a pesquisa de dados.",
+                    "c) Oferecer uma visão alternativa dos dados sem expor a estrutura real do BD.",
+                    "d) Executar lógicas complexas de negócios antes da inserção de dados."
+                ],
+                answer: "c) Oferecer uma visão alternativa dos dados sem expor a estrutura real do BD.",
+                feedback: "Uma View é uma tabela virtual que encapsula uma consulta SELECT, simplificando o acesso aos dados e abstraindo a complexidade da estrutura subjacente."
+            },
+            {
+                question: "Em relação aos tipos de backup no SQL Server, qual captura apenas as alterações feitas desde o último backup completo?",
+                options: [
+                    "a) Backup Completo",
+                    "b) Backup de Log de Transações",
+                    "c) Backup Diferencial",
+                    "d) Backup Incremental"
+                ],
+                answer: "c) Backup Diferencial",
+                feedback: "O Backup Diferencial armazena apenas as modificações desde o último backup completo, sendo mais rápido e ocupando menos espaço que um backup completo."
+            },
+            {
+                question: "O que é um 'esquema' em um banco de dados relacional?",
+                options: [
+                    "a) Um conjunto de dados não estruturados.",
+                    "b) A descrição da estrutura do banco de dados, incluindo tabelas, colunas e relacionamentos.",
+                    "c) O local físico onde os dados são armazenados no disco.",
+                    "d) Uma linguagem de programação para interagir com o banco de dados."
+                ],
+                answer: "b) A descrição da estrutura do banco de dados, incluindo tabelas, colunas e relacionamentos.",
+                feedback: "O esquema define a estrutura lógica de um banco de dados relacional, especificando como os dados são organizados e as relações entre eles."
+            },
+            {
+                question: "Qual o propósito do `SQL Server Management Studio (SSMS)`?",
+                options: [
+                    "a) Ser um ambiente de desenvolvimento para aplicações web.",
+                    "b) Uma ferramenta de linha de comando para administração de sistemas operacionais.",
+                    "c) Uma interface gráfica para configurar, gerenciar e administrar instâncias do SQL Server.",
+                    "d) Um software de backup para qualquer tipo de arquivo."
+                ],
+                answer: "c) Uma interface gráfica para configurar, gerenciar e administrar instâncias do SQL Server.",
+                feedback: "O SSMS é a principal ferramenta gráfica da Microsoft para gerenciar o SQL Server, permitindo desde a criação de bancos de dados até a execução de backups e monitoramento."
+            },
+            {
+                question: "Qual característica define um banco de dados NoSQL do tipo 'Documento'?",
+                options: [
+                    "a) Armazenamento de dados em formato de grafos com nós e arestas.",
+                    "b) Armazenamento de dados em pares chave-valor simples.",
+                    "c) Armazenamento de dados em estruturas flexíveis, como JSON (ou BSON).",
+                    "d) Otimizado para recuperação rápida de colunas de dados."
+                ],
+                answer: "c) Armazenamento de dados em estruturas flexíveis, como JSON (ou BSON).",
+                feedback: "Bancos de dados NoSQL de documento, como MongoDB, armazenam dados em documentos semi-estruturados que podem ter esquemas flexíveis, geralmente em formato JSON-like."
+            },
+            {
+                question: "Em transações concorrentes, o problema da 'leitura suja' (dirty read) ocorre quando:",
+                options: [
+                    "a) Uma transação lê dados que foram modificados por outra transação que ainda não fez commit.",
+                    "b) Duas transações tentam escrever no mesmo dado ao mesmo tempo.",
+                    "c) Uma transação lê dados antes que outra transação comece a modificá-los.",
+                    "d) Uma transação não consegue acessar os dados devido a um bloqueio."
+                ],
+                answer: "a) Uma transação lê dados que foram modificados por outra transação que ainda não fez commit.",
+                feedback: "Uma leitura suja ocorre quando uma transação lê dados que foram alterados por outra transação que ainda não foi confirmada. Se a transação que fez a alteração for desfeita (rollback), os dados lidos tornam-se inválidos."
+            },
+            {
+                question: "O que o protocolo `Write-Ahead Logging (WAL)` garante em um sistema de banco de dados?",
+                options: [
+                    "a) Que os dados sejam escritos no disco antes de serem registrados no log.",
+                    "b) Que os registros de log sejam gravados no disco de log antes que as modificações dos dados correspondentes sejam gravadas no disco principal.",
+                    "c) Que todas as transações sejam executadas em ordem serial.",
+                    "d) Que o banco de dados não sofra falhas de hardware."
+                ],
+                answer: "b) Que os registros de log sejam gravados no disco de log antes que as modificações dos dados correspondentes sejam gravadas no disco principal.",
+                feedback: "O WAL é um protocolo fundamental para a recuperação. Ele garante que os registros no log sejam sempre escritos antes que as alterações de dados sejam persistidas no disco, assegurando a atomicidade e durabilidade."
+            },
+            {
+                question: "Qual das funções T-SQL abaixo é usada para concatenar duas ou mais strings?",
+                options: [
+                    "a) `SUBSTRING()`",
+                    "b) `REPLACE()`",
+                    "c) `CONCAT()`",
+                    "d) `UPPER()`"
+                ],
+                answer: "c) `CONCAT()`",
+                feedback: "A função `CONCAT()` é utilizada para unir duas ou mais expressões de string em uma única string."
+            },
+            {
+                question: "Qual o principal benefício de um `Driver ODBC` para conexão com bancos de dados?",
+                options: [
+                    "a) É otimizado apenas para bancos de dados Oracle.",
+                    "b) Permite a conexão com bancos de dados de diferentes fabricantes usando uma interface padronizada.",
+                    "c) É exclusivo para aplicações Java.",
+                    "d) É um protocolo de segurança de rede para acesso a dados."
+                ],
+                answer: "b) Permite a conexão com bancos de dados de diferentes fabricantes usando uma interface padronizada.",
+                feedback: "ODBC (Open Database Connectivity) fornece uma API padronizada, permitindo que as aplicações se conectem a diversos SGBDs sem precisar de um driver específico para cada um."
+            },
+            {
+                question: "Em uma falha de sistema, se a recuperação usa a técnica de 'Atualização Imediata', quais transações precisam ser desfeitas (UNDO)?",
+                options: [
+                    "a) Apenas as transações que já fizeram commit.",
+                    "b) Nenhuma transação precisa ser desfeita.",
+                    "c) As transações que não fizeram commit, pois suas modificações podem ter sido gravadas no disco.",
+                    "d) Todas as transações, independentemente do estado."
+                ],
+                answer: "c) As transações que não fizeram commit, pois suas modificações podem ter sido gravadas no disco.",
+                feedback: "Na Atualização Imediata, alterações podem ser escritas no disco antes do commit. Se a transação não confirmou, suas alterações precisam ser desfeitas para manter a consistência."
+            },
+            {
+                question: "Qual o principal uso dos bancos de dados NoSQL do tipo 'Chave-Valor'?",
+                options: [
+                    "a) Análise de dados em tempo real e pesquisa de texto completo.",
+                    "b) Aplicações que precisam de alta escalabilidade horizontal, como jogos e publicidade online.",
+                    "c) Modelagem de dados com conexões complexas, como redes sociais.",
+                    "d) Armazenamento de documentos XML e JSON com validação de esquema rigorosa."
+                ],
+                answer: "b) Aplicações que precisam de alta escalabilidade horizontal, como jogos e publicidade online.",
+                feedback: "Bancos de dados Chave-Valor são simples e extremamente eficientes para escalar horizontalmente, ideais para casos de uso onde a recuperação de dados é baseada em uma chave única."
+            },
+            {
+                question: "O que significa 'Idempotência' no contexto de operações de recuperação de banco de dados?",
+                options: [
+                    "a) Que a operação só pode ser executada uma única vez.",
+                    "b) Que o resultado de uma operação é o mesmo, mesmo que ela seja executada múltiplas vezes.",
+                    "c) Que a operação é reversível.",
+                    "d) Que a operação é sempre executada de forma atômica."
+                ],
+                answer: "b) Que o resultado de uma operação é o mesmo, mesmo que ela seja executada múltiplas vezes.",
+                feedback: "Operações idempotentes garantem que a repetição de um comando durante a recuperação (por exemplo, um REDO) não cause efeitos colaterais indesejáveis, pois o resultado final será o mesmo."
+            },
+            {
+                question: "Qual a função do `SET NOCOUNT ON;` em uma `Stored Procedure` no SQL Server?",
+                options: [
+                    "a) Desabilitar a contagem de linhas afetadas por operações DML.",
+                    "b) Impedir a execução da procedure se nenhuma linha for afetada.",
+                    "c) Definir o número máximo de linhas que a procedure pode retornar.",
+                    "d) Contar o número de transações abertas."
+                ],
+                answer: "a) Desabilitar a contagem de linhas afetadas por operações DML.",
+                feedback: "O `SET NOCOUNT ON;` suprime as mensagens que indicam o número de linhas afetadas por instruções Transact-SQL, o que pode melhorar a performance em algumas aplicações."
+            },
+            {
+                question: "A ausência de qual propriedade ACID pode levar a problemas como 'leitura suja' e 'perda de atualização' em um ambiente de transações concorrentes?",
+                options: [
+                    "a) Atomicidade",
+                    "b) Consistência",
+                    "c) Isolamento",
+                    "d) Durabilidade"
+                ],
+                answer: "c) Isolamento",
+                feedback: "O Isolamento garante que a execução de transações concorrentes não interfira umas nas outras, prevenindo problemas como leitura suja, leitura não repetível e perda de atualização."
+            },
+            {
+                question: "Em um banco de dados relacional, o que é uma 'tabela'?",
+                options: [
+                    "a) Um tipo de documento JSON.",
+                    "b) Um conjunto de dados não estruturados.",
+                    "c) Uma estrutura que organiza dados em linhas (registros) e colunas (atributos).",
+                    "d) Uma coleção de funções SQL pré-definidas."
+                ],
+                answer: "c) Uma estrutura que organiza dados em linhas (registros) e colunas (atributos).",
+                feedback: "No modelo relacional, a tabela é a estrutura fundamental para armazenar dados, composta por linhas (tuplas) e colunas (atributos), que representam entidades e seus relacionamentos."
+            },
+            {
+                question: "Qual tipo de backup no SQL Server é utilizado para restauração ponto-a-ponto, sendo útil com o recovery model FULL?",
+                options: [
+                    "a) Backup Completo",
+                    "b) Backup Diferencial",
+                    "c) Backup de Log de Transações",
+                    "d) Backup de Arquivo"
+                ],
+                answer: "c) Backup de Log de Transações",
+                feedback: "O Backup de Log de Transações registra todas as operações no banco de dados e é essencial para recuperações precisas (point-in-time recovery) quando o modelo de recuperação é 'Full'."
+            },
+            {
+                question: "Qual o conceito principal por trás dos bancos de dados NoSQL?",
+                options: [
+                    "a) Serem baseados exclusivamente em SQL padrão.",
+                    "b) Modelarem dados em formas diferentes das relações tabulares tradicionais.",
+                    "c) Focarem apenas em consistência forte (ACID).",
+                    "d) Não permitirem a escalabilidade horizontal."
+                ],
+                answer: "b) Modelarem dados em formas diferentes das relações tabulares tradicionais.",
+                feedback: "NoSQL significa 'Not Only SQL', e sua característica principal é a flexibilidade de modelagem de dados, fugindo do modelo tabular relacional para se adaptar a diferentes necessidades e escalas."
+            },
+            {
+                question: "Qual a desvantagem de usar muitos `Triggers` em um SGBD?",
+                options: [
+                    "a) Melhoram a performance da base de dados.",
+                    "b) Podem prejudicar a performance do SGBD e dificultar a depuração.",
+                    "c) Não podem ser usados para auditoria.",
+                    "d) Não podem ser associados a tabelas."
+                ],
+                answer: "b) Podem prejudicar a performance do SGBD e dificultar a depuração.",
+                feedback: "Triggers são poderosos, mas o uso excessivo ou a lógica complexa dentro deles podem introduzir overhead e dificultar o entendimento e a manutenção do fluxo de dados."
+            },
+            {
+                question: "O que é uma `String de Conexão` em bancos de dados?",
+                options: [
+                    "a) Um comando SQL para criar uma nova tabela.",
+                    "b) Um conjunto de parâmetros que especifica como uma aplicação se conecta a um banco de dados.",
+                    "c) O nome de um arquivo de log de transações.",
+                    "d) Uma ferramenta para otimização de consultas."
+                ],
+                answer: "b) Um conjunto de parâmetros que especifica como uma aplicação se conecta a um banco de dados.",
+                feedback: "A string de conexão contém informações essenciais como servidor, nome do banco de dados, credenciais e outras configurações para que uma aplicação possa estabelecer comunicação com o SGBD."
+            },
+            {
+                question: "Na recuperação de banco de dados, o que é um `Checkpoint`?",
+                options: [
+                    "a) Um ponto no tempo onde uma transação é desfeita.",
+                    "b) Um ponto no tempo onde todas as modificações de log e de dados na memória são forçadas para o disco, e um registro é feito no log.",
+                    "c) Um erro grave que causa a falha do sistema.",
+                    "d) O início de uma nova transação."
+                ],
+                answer: "b) Um ponto no tempo onde todas as modificações de log e de dados na memória são forçadas para o disco, e um registro é feito no log.",
+                feedback: "Checkpoints reduzem o tempo de recuperação, pois garantem que todas as alterações até aquele ponto já foram escritas no disco, limitando a parte do log a ser processada."
+            },
+            {
+                question: "Qual é o principal problema que o `Isolamento` (I de ACID) de transações busca resolver?",
+                options: [
+                    "a) A perda de dados após uma falha do sistema.",
+                    "b) A inconsistência dos dados devido a erros de programação.",
+                    "c) Interferência entre transações concorrentes.",
+                    "d) A execução parcial de uma transação."
+                ],
+                answer: "c) Interferência entre transações concorrentes.",
+                feedback: "O Isolamento visa garantir que transações executando simultaneamente não causem resultados inconsistentes ou inesperados, agindo como se estivessem executando de forma isolada."
+            },
+            {
+                question: "Em MongoDB, qual é o equivalente a uma 'tabela' em um banco de dados relacional?",
+                options: [
+                    "a) Campo",
+                    "b) Documento",
+                    "c) Coleção",
+                    "d) Banco de Dados"
+                ],
+                answer: "c) Coleção",
+                feedback: "Em MongoDB, as coleções são equivalentes às tabelas no mundo relacional, onde os documentos (linhas) são armazenados."
+            },
+            {
+                question: "Qual das seguintes não é uma função escalar de string no SQL Server?",
+                options: [
+                    "a) `CONCAT()`",
+                    "b) `LOWER()`",
+                    "c) `SUM()`",
+                    "d) `SUBSTRING()`"
+                ],
+                answer: "c) `SUM()`",
+                feedback: "`SUM()` é uma função de agregação (sumarizadora), usada para calcular a soma de um conjunto de valores, não uma função escalar de string."
+            },
+            {
+                question: "Qual a vantagem de usar `SQL Embutida` em vez de construir todas as queries na aplicação?",
+                options: [
+                    "a) Reduz a segurança da aplicação.",
+                    "b) Aumenta a dependência da aplicação no SGBD.",
+                    "c) Permite retirar da aplicação a responsabilidade de gerenciar o SQL, centralizando-o no SGBD.",
+                    "d) Torna o banco de dados completamente independente de aplicações."
+                ],
+                answer: "c) Permite retirar da aplicação a responsabilidade de gerenciar o SQL, centralizando-o no SGBD.",
+                feedback: "SQL Embutida (ou Stored Procedures, Views, Triggers) permite centralizar a lógica SQL no SGBD, facilitando a manutenção e a segurança, pois a aplicação não precisa conhecer os detalhes do esquema."
+            },
+            {
+                question: "Qual o objetivo principal de um `Log de Transações` em um SGBD?",
+                options: [
+                    "a) Apenas registrar erros do sistema.",
+                    "b) Manter um registro sequencial de todas as operações que afetam itens do BD, usado para recuperação e auditoria.",
+                    "c) Armazenar cópias completas de segurança do banco de dados.",
+                    "d) Otimizar a velocidade das consultas SELECT."
+                ],
+                answer: "b) Manter um registro sequencial de todas as operações que afetam itens do BD, usado para recuperação e auditoria.",
+                feedback: "O log de transações é o coração da recuperação de banco de dados, registrando todas as alterações para que o sistema possa fazer UNDO ou REDO em caso de falha e para fins de auditoria."
+            },
+            {
+                question: "Qual dos seguintes não é um tipo de banco de dados NoSQL?",
+                options: [
+                    "a) Chave-Valor",
+                    "b) Relacional",
+                    "c) Documento",
+                    "d) Grafo"
+                ],
+                answer: "b) Relacional",
+                feedback: "Bancos de dados Relacionais (como SQL Server, MySQL) são a categoria tradicional, enquanto NoSQL (Not Only SQL) abrange modelos como Chave-Valor, Documento, Colunar e Grafo."
+            },
+            {
+                question: "A propriedade `Consistência` (C de ACID) de uma transação garante que:",
+                options: [
+                    "a) A transação seja executada como uma unidade indivisível.",
+                    "b) O sistema de banco de dados esteja sempre disponível.",
+                    "c) A execução completa de uma transação faça o BD passar de um estado consistente para outro consistente.",
+                    "d) As alterações sejam permanentes mesmo após uma falha."
+                ],
+                answer: "c) A execução completa de uma transação faça o BD passar de um estado consistente para outro consistente.",
+                feedback: "Consistência assegura que uma transação válida levará o banco de dados de um estado válido a outro válido, mantendo as regras e restrições definidas."
+            },
+            {
+                question: "Qual a função do comando `COMMIT TRANSACTION` em T-SQL?",
+                options: [
+                    "a) Iniciar uma nova transação.",
+                    "b) Desfazer todas as operações de uma transação.",
+                    "c) Salvar permanentemente todas as modificações feitas dentro de uma transação.",
+                    "d) Simular um erro para testar o rollback."
+                ],
+                answer: "c) Salvar permanentemente todas as modificações feitas dentro de uma transação.",
+                feedback: "`COMMIT TRANSACTION` finaliza a transação e torna todas as suas modificações permanentes no banco de dados, tornando-as visíveis para outras transações."
+            },
+            {
+                question: "Em qual cenário a 'perda de atualização' (lost update) pode ocorrer em transações concorrentes?",
+                options: [
+                    "a) Uma transação lê dados que nunca foram modificados.",
+                    "b) As modificações de uma transação são sobrescritas pelas de outra que leu um valor antigo do dado.",
+                    "c) Duas transações tentam ler o mesmo dado simultaneamente.",
+                    "d) Uma transação tenta acessar dados fora de seu escopo."
+                ],
+                answer: "b) As modificações de uma transação são sobrescritas pelas de outra que leu um valor antigo do dado.",
+                feedback: "A perda de atualização acontece quando uma transação sobrescreve a atualização de outra transação que se baseou em uma versão desatualizada do dado, levando a um estado inconsistente."
+            },
+            {
+                question: "O que é `pyodbc` em Python?",
+                options: [
+                    "a) Uma biblioteca para criar interfaces gráficas de usuário.",
+                    "b) Uma ferramenta para gerenciamento de pacotes Python.",
+                    "c) Uma biblioteca Python que permite conexão e interação com bancos de dados via protocolo ODBC.",
+                    "d) Um framework web para desenvolvimento de APIs REST."
+                ],
+                answer: "c) Uma biblioteca Python que permite conexão e interação com bancos de dados via protocolo ODBC.",
+                feedback: "`pyodbc` é a ponte entre aplicações Python e diversos bancos de dados, utilizando o padrão ODBC para garantir compatibilidade."
+            },
+            {
+                question: "Qual tipo de falha de banco de dados envolve dano físico, como falha de disco?",
+                options: [
+                    "a) Erro de transação.",
+                    "b) Queda de sistema (crash).",
+                    "c) Problemas físicos e catástrofes.",
+                    "d) Erro local da aplicação."
+                ],
+                answer: "c) Problemas físicos e catástrofes.",
+                feedback: "Falhas de disco, incêndios ou inundações são exemplos de problemas físicos ou catástrofes que causam dano físico ao banco de dados e exigem recuperação mais complexa, muitas vezes a partir de backups."
+            },
+            {
+                question: "Qual das seguintes opções é uma desvantagem do uso de `Stored Procedures`?",
+                options: [
+                    "a) Melhoram a performance.",
+                    "b) Modularidade.",
+                    "c) Dependência do SGBD (sintaxe pode variar entre sistemas).",
+                    "d) Atuam como mecanismo de segurança."
+                ],
+                answer: "c) Dependência do SGBD (sintaxe pode variar entre sistemas).",
+                feedback: "Uma desvantagem é que a sintaxe e o comportamento das Stored Procedures podem variar significativamente entre diferentes SGBDs, dificultando a migração."
+            },
+            {
+                question: "O que é um `Backup Completo` no SQL Server?",
+                options: [
+                    "a) Um backup que captura apenas as alterações recentes.",
+                    "b) Um backup que captura todos os dados do banco de dados, sendo a base para outras formas de backup.",
+                    "c) Um backup que registra todas as operações de log.",
+                    "d) Um backup que só pode ser restaurado no mesmo servidor."
+                ],
+                answer: "b) Um backup que captura todos os dados do banco de dados, sendo a base para outras formas de backup.",
+                feedback: "O Backup Completo é a cópia integral do banco de dados em um dado momento, incluindo todos os dados e o log de transações até o ponto do backup. É a base para restaurações."
+            },
+            {
+                question: "Qual o tipo de banco de dados NoSQL mais adequado para armazenar dados na forma de 'nós' e 'arestas', representando conexões?",
+                options: [
+                    "a) Chave-Valor",
+                    "b) Colunar",
+                    "c) Documento",
+                    "d) Grafo"
+                ],
+                answer: "d) Grafo",
+                feedback: "Bancos de dados de Grafo são projetados para modelar e consultar dados altamente conectados, onde as relações (arestas) entre entidades (nós) são tão importantes quanto os próprios dados."
+            },
+            {
+                question: "Em uma consulta MongoDB, o que o operador `$elemMatch` faz?",
+                options: [
+                    "a) Retorna todos os documentos que contêm o campo especificado.",
+                    "b) Verifica se pelo menos um elemento em um array satisfaz todas as condições especificadas.",
+                    "c) Realiza uma comparação de igualdade estrita entre dois elementos.",
+                    "d) Adiciona um novo elemento a um array em um documento."
+                ],
+                answer: "b) Verifica se pelo menos um elemento em um array satisfaz todas as condições especificadas.",
+                feedback: "`$elemMatch` é crucial ao consultar arrays de documentos, garantindo que um *único* sub-documento dentro do array satisfaça *todas* as condições especificadas."
+            },
+            {
+                question: "Qual dos seguintes é um exemplo de função de agregação no SQL Server?",
+                options: [
+                    "a) `SYSDATETIME()`",
+                    "b) `REPLACE()`",
+                    "c) `AVG()`",
+                    "d) `HOST_NAME()`"
+                ],
+                answer: "c) `AVG()`",
+                feedback: "`AVG()` (average) é uma função de agregação que calcula a média de um conjunto de valores. As outras são funções escalares ou de sistema."
+            },
+            {
+                question: "O que é o `SQL Server Agent`?",
+                options: [
+                    "a) Um tipo de driver de conexão com o banco de dados.",
+                    "b) Uma ferramenta para monitorar o desempenho do servidor em tempo real.",
+                    "c) Um serviço do SQL Server para automatizar tarefas administrativas, como backups e manutenção.",
+                    "d) Um editor de texto para escrever queries SQL."
+                ],
+                answer: "c) Um serviço do SQL Server para automatizar tarefas administrativas, como backups e manutenção.",
+                feedback: "O SQL Server Agent é uma funcionalidade que permite agendar e automatizar diversas tarefas, como backups, replicação, alertas e execução de jobs."
+            },
+            {
+                question: "Por que é importante testar regularmente a recuperação de backups?",
+                options: [
+                    "a) Para garantir que o backup ocupe menos espaço em disco.",
+                    "b) Para validar a integridade dos backups e assegurar que os dados podem ser restaurados quando necessário.",
+                    "c) Para aumentar a velocidade das operações DML.",
+                    "d) Para monitorar o uso da CPU do servidor."
+                ],
+                answer: "b) Para validar a integridade dos backups e assegurar que os dados podem ser restaurados quando necessário.",
+                feedback: "Testar a recuperação de backups é fundamental para garantir que, em caso de desastre, os dados estarão íntegros e o processo de restauração funcionará como esperado."
+            },
+            {
+                question: "Qual das '5 Vs' do Big Data se refere à grande quantidade de dados gerados e armazenados?",
+                options: [
+                    "a) Variedade",
+                    "b) Velocidade",
+                    "c) Volume",
+                    "d) Veracidade"
+                ],
+                answer: "c) Volume",
+                feedback: "Volume é a característica do Big Data que se refere à enorme escala de dados gerados por diversas fontes."
+            },
+            {
+                question: "Qual a diferença chave entre `Embedding` e `Linking` para relacionamentos em MongoDB?",
+                options: [
+                    "a) Embedding armazena documentos em coleções separadas, Linking os aninha.",
+                    "b) Embedding aninha documentos relacionados em um único documento, Linking usa referências (IDs).",
+                    "c) Embedding é para grafos, Linking é para documentos.",
+                    "d) Não há diferença prática, são termos intercambiáveis."
+                ],
+                answer: "b) Embedding aninha documentos relacionados em um único documento, Linking usa referências (IDs).",
+                feedback: "Embedding (aninhamento) coloca documentos relacionados diretamente dentro de um documento pai. Linking (referência) armazena apenas o ID do documento relacionado, exigindo uma segunda consulta para buscar os dados."
+            },
+            {
+                question: "Qual a finalidade de uma 'transação' em um banco de dados?",
+                options: [
+                    "a) Apenas para ler dados do banco de dados.",
+                    "b) Uma unidade de execução de programa que acessa e, possivelmente, atualiza vários itens de dados, garantindo a integridade.",
+                    "c) Um programa que otimiza o desempenho do servidor.",
+                    "d) Un processo para criar um novo banco de dados."
+                ],
+                answer: "b) Uma unidade de execução de programa que acessa e, possivelmente, atualiza vários itens de dados, garantindo a integridade.",
+                feedback: "Transações são a base para garantir a consistência e integridade dos dados em SGBDs, aplicando as propriedades ACID."
+            },
+            {
+                question: "No contexto de recuperação, o que é um `log de UNDO`?",
+                options: [
+                    "a) Um log que armazena apenas o valor atualizado do dado (after image).",
+                    "b) Um log que mantém apenas o valor antigo do dado (before image), usado para desfazer operações.",
+                    "c) Um log que registra transações confirmadas.",
+                    "d) Um log para auditoria de segurança."
+                ],
+                answer: "b) Um log que mantém apenas o valor antigo do dado (before image), usado para desfazer operações.",
+                feedback: "O log de UNDO armazena o estado anterior de um dado modificado, permitindo que as alterações sejam revertidas se a transação falhar ou for abortada."
+            },
+            {
+                question: "Qual a sintaxe básica para criar uma `Stored Procedure` no SQL Server?",
+                options: [
+                    "a) `CREATE FUNCTION ...`",
+                    "b) `CREATE TRIGGER ...`",
+                    "c) `CREATE PROCEDURE ...`",
+                    "d) `CREATE VIEW ...`"
+                ],
+                answer: "c) `CREATE PROCEDURE ...`",
+                feedback: "A sintaxe correta para criar um procedimento armazenado no SQL Server é `CREATE PROCEDURE`."
+            },
+            {
+                question: "Em um escalonamento de transações, o que é um conflito de 'leitura/escrita' (RW conflict)?",
+                options: [
+                    "a) Uma transação lê um dado, e outra transação o escreve antes que a primeira termine.",
+                    "b) Duas transações leem o mesmo dado simultaneamente.",
+                    "c) Uma transação escreve um dado, e outra transação o lê antes que a primeira termine.",
+                    "d) Ambas as transações tentam escrever no mesmo dado."
+                ],
+                answer: "a) Uma transação lê um dado, e outra transação o escreve antes que a primeira termine.",
+                feedback: "Um conflito de leitura/escrita ocorre quando uma transação lê um dado que é posteriormente modificado por outra transação antes da primeira ser concluída, podendo levar a leituras inconsistentes."
+            },
+            {
+                question: "Qual o principal uso dos bancos de dados NoSQL do tipo 'Colunar'?",
+                options: [
+                    "a) Armazenamento de objetos complexos.",
+                    "b) Otimizado para recuperação rápida de colunas de dados e grandes volumes de escritas.",
+                    "c) Gerenciamento de relacionamentos entre entidades.",
+                    "d) Suporte a consultas SQL complexas."
+                ],
+                answer: "b) Otimizado para recuperação rápida de colunas de dados e grandes volumes de escritas.",
+                feedback: "Bancos de dados colunares armazenam dados por colunas, o que é ideal para cargas de trabalho analíticas e de Big Data onde se consulta frequentemente um subconjunto de colunas em grandes datasets."
+            },
+            {
+                question: "O que é um SGBD multiusuário?",
+                options: [
+                    "a) Um sistema que permite apenas um usuário acessar o banco de dados por vez.",
+                    "b) Um sistema que pode ser usado em múltiplos sistemas operacionais.",
+                    "c) Um sistema que processa simultaneamente operações disparadas por vários usuários.",
+                    "d) Um sistema que armazena dados em múltiplas cópias."
+                ],
+                answer: "c) Um sistema que processa simultaneamente operações disparadas por vários usuários.",
+                feedback: "Um SGBD multiusuário é projetado para permitir que vários usuários acessem e manipulem os dados concorrentemente, otimizando o uso dos recursos e o tempo de resposta."
+            },
+            {
+                question: "Qual das opções abaixo é uma das '5 Vs' que não se refere à escala ou velocidade, mas à credibilidade e qualidade dos dados?",
+                options: [
+                    "a) Volume",
+                    "b) Variedade",
+                    "c) Velocidade",
+                    "d) Veracidade"
+                ],
+                answer: "d) Veracidade",
+                feedback: "Veracidade refere-se à qualidade, exatidão e confiabilidade dos dados no contexto do Big Data, abordando a incerteza e a inconsistência dos dados."
+            },
+            {
+                question: "Um `View` no SQL Server é fisicamente materializado no disco?",
+                options: [
+                    "a) Sim, sempre.",
+                    "b) Não, é uma tabela virtual que encapsula uma consulta SELECT.",
+                    "c) Apenas se tiver cláusulas `GROUP BY`.",
+                    "d) Apenas se for criada com `WITH SCHEMABINDING`."
+                ],
+                answer: "b) Não, é uma tabela virtual que encapsula uma consulta SELECT.",
+                feedback: "Uma View é uma representação lógica dos dados, um resultado de uma consulta armazenada, e não armazena dados fisicamente por si só (exceto em casos de 'Indexed Views' ou 'Materialized Views', que são uma exceção e possuem materialização física, mas o conceito básico de View é virtual)."
+            },
+            {
+                question: "Qual tipo de backup no SQL Server é o mais adequado para restaurações rápidas de pontos no tempo, mas exige um backup completo anterior?",
+                options: [
+                    "a) Backup Completo",
+                    "b) Backup Diferencial",
+                    "c) Backup de Log de Transações",
+                    "d) Backup de Arquivo"
+                ],
+                answer: "b) Backup Diferencial",
+                feedback: "O Backup Diferencial é mais rápido para restaurar do que múltiplos backups de log, pois requer apenas o último backup completo e o último diferencial. É mais eficiente que um completo, mas depende dele."
+            },
+            {
+                question: "Qual das seguintes ações NÃO é uma propriedade garantida pela `Atomicidade`?",
+                options: [
+                    "a) Todas as operações da transação são efetivadas com sucesso.",
+                    "b) Nenhuma operação da transação é efetivada se houver falha.",
+                    "c) O banco de dados passa de um estado consistente para outro consistente.",
+                    "d) Desfazer as ações de transações parcialmente executadas em caso de falha."
+                ],
+                answer: "c) O banco de dados passa de um estado consistente para outro consistente.",
+                feedback: "A Atomicidade garante o 'tudo ou nada' das operações. A transição de um estado consistente para outro consistente é responsabilidade da propriedade de Consistência."
+            },
+            {
+                question: "Qual é a principal desvantagem dos bancos de dados relacionais em cenários de Big Data com esquemas altamente flexíveis?",
+                options: [
+                    "a) Falta de suporte a SQL.",
+                    "b) Dificuldade em lidar com grandes volumes de dados não estruturados ou semi-estruturados devido a esquemas rígidos.",
+                    "c) Baixa segurança.",
+                    "d) Não oferecem transações ACID."
+                ],
+                answer: "b) Dificuldade em lidar com grandes volumes de dados não estruturados ou semi-estruturados devido a esquemas rígidos.",
+                feedback: "Bancos de dados relacionais exigem um esquema pré-definido, o que pode ser um desafio para dados em constante evolução ou não estruturados, comuns no Big Data."
+            },
+            {
+                question: "Para que serve a função `DATEFROMPARTS` no SQL Server?",
+                options: [
+                    "a) Para calcular a diferença entre duas datas.",
+                    "b) Para retornar a data e hora atual do sistema.",
+                    "c) Para construir uma data a partir de valores de ano, mês e dia.",
+                    "d) Para extrair uma parte específica de uma data (ex: mês)."
+                ],
+                answer: "c) Para construir uma data a partir de valores de ano, mês e dia.",
+                feedback: "`DATEFROMPARTS(ano, mes, dia)` permite criar um valor de data válido fornecendo os componentes individuais (ano, mês, dia)."
+            },
+            {
+                question: "O que é um `Driver JDBC`?",
+                options: [
+                    "a) Um driver para conectar aplicativos Python a bancos de dados.",
+                    "b) Uma interface padronizada para acessar bancos de dados, independentemente do DBMS.",
+                    "c) Um driver usado para conectar aplicativos Java a bancos de dados.",
+                    "d) Um padrão da Microsoft para acesso a dados."
+                ],
+                answer: "c) Um driver usado para conectar aplicativos Java a bancos de dados.",
+                feedback: "JDBC (Java Database Connectivity) é a API padrão em Java para conectar e interagir com bancos de dados relacionais."
+            },
+            {
+                question: "Qual das seguintes é uma característica fundamental do `Log de Transações`?",
+                options: [
+                    "a) É armazenado apenas na memória RAM do servidor.",
+                    "b) É afetado apenas por falhas de software, não por falhas de disco.",
+                    "c) Deve ser mantido em disco, preferencialmente em um disco separado, para garantir a recuperação.",
+                    "d) É apenas para fins de auditoria, sem papel na recuperação."
+                ],
+                answer: "c) Deve ser mantido em disco, preferencialmente em um disco separado, para garantir a recuperação.",
+                feedback: "O log de transações é crucial para a recuperação e, por isso, sua persistência e redundância são vitais, sendo recomendado armazená-lo em um disco separado e resiliente."
+            },
+            {
+                question: "Qual das seguintes frases melhor descreve o `Modelo Não Relacional` (NoSQL)?",
+                options: [
+                    "a) É sempre baseado em esquemas rígidos e normalização de dados.",
+                    "b) Prioriza a consistência forte (ACID) em detrimento da escalabilidade.",
+                    "c) Oferece esquemas flexíveis e não suporta 'join' ou relacionamentos nativamente, com foco em escalabilidade e disponibilidade.",
+                    "d) É uma substituição completa para todos os bancos de dados relacionais."
+                ],
+                answer: "c) Oferece esquemas flexíveis e não suporta 'join' ou relacionamentos nativamente, com foco em escalabilidade e disponibilidade.",
+                feedback: "Modelos NoSQL são caracterizados pela flexibilidade de esquema, pela capacidade de escalar horizontalmente e, muitas vezes, por não terem suporte nativo para operações de join complexas como nos relacionais."
+            },
+            {
+                question: "O que é um `Buffer Pool` (Cache do SGBD)?",
+                options: [
+                    "a) Uma área de disco para armazenar backups.",
+                    "b) Uma área de memória RAM usada para armazenar páginas de dados lidas do disco, acelerando o acesso.",
+                    "c) Uma ferramenta para monitorar o tráfego de rede do banco de dados.",
+                    "d) Um tipo de índice para otimização de consultas."
+                ],
+                answer: "b) Uma área de memória RAM usada para armazenar páginas de dados lidas do disco, acelerando o acesso.",
+                feedback: "O Buffer Pool é uma cache em memória que armazena cópias das páginas de dados e índices do disco, reduzindo a necessidade de acessos lentos ao disco."
+            },
+            {
+                question: "Qual a principal vantagem da 'Atualização Adiada' em relação à 'Atualização Imediata' no processo de recuperação?",
+                options: [
+                    "a) Recuperação mais rápida de transações não confirmadas.",
+                    "b) Não há necessidade de operações de UNDO, pois modificações não confirmadas nunca vão para o disco.",
+                    "c) Garante que todas as modificações sejam persistidas imediatamente no disco.",
+                    "d) É mais complexa de implementar."
+                ],
+                answer: "b) Não há necessidade de operações de UNDO, pois modificações não confirmadas nunca vão para o disco.",
+                feedback: "A grande vantagem da Atualização Adiada é que, se uma transação não faz commit, suas alterações simplesmente não foram para o disco, simplificando a recuperação ao eliminar a necessidade de UNDO."
+            }
+        ];
+
+        let userAnswers = {}; // Armazena as respostas do usuário
+        let score = 0;
+        let currentPage = 0; // Página atual (0-indexed)
+        const questionsPerPage = 5; // Número de questões por página
+
+        const quizContainer = document.getElementById('quiz-container');
+        // submitButton is now hidden and its functionality integrated into option selection.
+        const restartButton = document.getElementById('restart-quiz');
+        const resultsArea = document.getElementById('results');
+        const scoreDisplay = document.getElementById('score');
+        const answersSummary = document.getElementById('answers-summary');
+        const prevPageButton = document.getElementById('prev-page');
+        const nextPageButton = document = document.getElementById('next-page');
+        const pageInfoSpan = document.getElementById('page-info');
+
+        // Função para embaralhar um array (Fisher-Yates)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Função para verificar e dar feedback imediato
+        function checkAnswer(selectedOption, questionIndex) {
+            const question = questions[questionIndex];
+            const isCorrect = selectedOption === question.answer;
+            const questionCard = document.querySelector(`input[name="question${questionIndex}"]`).closest('.question-card');
+            
+            // Remove previous feedback classes
+            questionCard.querySelectorAll('.option-label').forEach(label => {
+                label.classList.remove('correct', 'incorrect');
+            });
+
+            // Apply feedback to the selected option
+            const selectedLabel = document.querySelector(`input[name="question${questionIndex}"][value="${selectedOption}"]`).closest('.option-label');
+            if (isCorrect) {
+                selectedLabel.classList.add('correct');
+                // Increment score only if it's the first correct attempt for this question
+                if (!question.answeredCorrectly) {
+                    score++;
+                    question.answeredCorrectly = true; // Mark as correctly answered
+                }
+            } else {
+                selectedLabel.classList.add('incorrect');
+                // Highlight the correct answer
+                const correctAnswerLabel = document.querySelector(`input[name="question${questionIndex}"][value="${question.answer}"]`).closest('.option-label');
+                if (correctAnswerLabel) {
+                    correctAnswerLabel.classList.add('correct'); // Show correct option in green
+                }
+            }
+
+            // Display feedback text
+            let feedbackElement = questionCard.querySelector('.feedback');
+            if (!feedbackElement) {
+                feedbackElement = document.createElement('p');
+                feedbackElement.className = 'feedback';
+                questionCard.appendChild(feedbackElement);
+            }
+            feedbackElement.textContent = `Feedback: ${question.feedback}`;
+
+            // Disable all radio buttons for this question after an answer is chosen
+            questionCard.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.disabled = true;
+            });
+            
+            // Update running score display
+            updateRunningScore();
+        }
+
+        // Updates the running score displayed
+        function updateRunningScore() {
+            // Find or create a running score element (could be in pagination area or elsewhere)
+            let runningScoreEl = document.getElementById('running-score');
+            if (!runningScoreEl) {
+                runningScoreEl = document.createElement('span');
+                runningScoreEl.id = 'running-score';
+                runningScoreEl.className = 'ml-4 font-bold text-blue-600';
+                pageInfoSpan.parentNode.insertBefore(runningScoreEl, pageInfoSpan.nextSibling);
+            }
+            runningScoreEl.textContent = `Acertos: ${score}`;
+        }
+
+
+        // Carrega as questões no HTML
+        function loadQuiz() {
+            quizContainer.innerHTML = ''; // Limpa o container
+            resultsArea.classList.add('hidden'); // Esconde a área de resultados
+            restartButton.classList.add('hidden'); // Esconde o botão de reiniciar
+            document.getElementById('submit-quiz').classList.add('hidden'); // Ensure submit is hidden
+
+            // Exibir botões de navegação
+            prevPageButton.classList.remove('hidden');
+            nextPageButton.classList.remove('hidden');
+            pageInfoSpan.classList.remove('hidden');
+
+
+            // Calcular o índice inicial e final das questões para a página atual
+            const startIndex = currentPage * questionsPerPage;
+            const endIndex = Math.min(startIndex + questionsPerPage, questions.length); // Ensure endIndex doesn't exceed total questions
+            const questionsToShow = questions.slice(startIndex, endIndex);
+
+            questionsToShow.forEach((q, indexInPage) => {
+                const globalIndex = startIndex + indexInPage; // Índice global da questão
+                const questionCard = document.createElement('div');
+                questionCard.className = 'question-card';
+
+                const questionTitle = document.createElement('p');
+                questionTitle.className = 'question-title';
+                questionTitle.textContent = `${globalIndex + 1}. ${q.question}`; // Numeração global
+                questionCard.appendChild(questionTitle);
+
+                const optionsDiv = document.createElement('div');
+
+                // Embaralha as opções para cada questão
+                const shuffledOptions = [...q.options];
+                shuffleArray(shuffledOptions);
+
+                shuffledOptions.forEach(option => {
+                    const label = document.createElement('label');
+                    label.className = 'option-label';
+
+                    const radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.name = `question${globalIndex}`; // Nome do rádio baseado no índice global
+                    radio.value = option;
+                    
+                    // Add event listener for immediate feedback
+                    radio.addEventListener('change', (event) => {
+                        userAnswers[globalIndex] = event.target.value; // Store the answer
+                        checkAnswer(event.target.value, globalIndex); // Check and give feedback
+                    });
+
+                    label.appendChild(radio);
+                    label.appendChild(document.createTextNode(option));
+                    optionsDiv.appendChild(label);
+                    
+                    // If question was already answered, apply feedback and disable radios
+                    if (userAnswers[globalIndex]) {
+                        const answeredCorrectly = userAnswers[globalIndex] === q.answer;
+                        if (userAnswers[globalIndex] === option) { // This is the selected option
+                            label.classList.add(answeredCorrectly ? 'correct' : 'incorrect');
+                        } else if (!answeredCorrectly && option === q.answer) { // This is the correct option if selected was wrong
+                             label.classList.add('correct');
+                        }
+                        radio.disabled = true; // Disable if already answered
+                    }
+                });
+                questionCard.appendChild(optionsDiv);
+                
+                // Re-add feedback text if already answered
+                if (userAnswers[globalIndex]) {
+                    let feedbackElement = document.createElement('p');
+                    feedbackElement.className = 'feedback';
+                    feedbackElement.textContent = `Feedback: ${q.feedback}`;
+                    questionCard.appendChild(feedbackElement);
+                }
+
+                quizContainer.appendChild(questionCard);
+            });
+
+            // Atualizar status dos botões de navegação e info da página
+            prevPageButton.disabled = currentPage === 0;
+            nextPageButton.disabled = endIndex >= questions.length;
+            pageInfoSpan.textContent = `Página ${currentPage + 1} de ${Math.ceil(questions.length / questionsPerPage)}`;
+            updateRunningScore();
+
+            // Se for a última página, mostrar o resumo final
+            if (endIndex >= questions.length && Object.keys(userAnswers).length === questions.length) {
+                 displayFinalResults();
+            }
+        }
+
+        // Função para exibir os resultados finais
+        function displayFinalResults() {
+            scoreDisplay.textContent = `Você acertou ${score} de ${questions.length} questões.`;
+            answersSummary.innerHTML = ''; // Limpa o resumo anterior
+
+            questions.forEach((q, index) => {
+                const userAnswer = userAnswers[index];
+                const listItem = document.createElement('li');
+                const isCorrect = userAnswer === q.answer;
+
+                listItem.innerHTML = `<span class="font-bold ${isCorrect ? 'correct-answer-text' : 'incorrect-answer-text'}">Questão ${index + 1}:</span> Sua resposta: <span class="${isCorrect ? 'correct-answer-text' : 'incorrect-answer-text'}">${userAnswer || 'Não respondida'}</span>. Resposta correta: <span class="correct-answer-text">${q.answer}</span>.`;
+                
+                const feedbackParagraph = document.createElement('p');
+                feedbackParagraph.className = 'feedback text-gray-600';
+                feedbackParagraph.textContent = `Feedback: ${q.feedback}`;
+                listItem.appendChild(feedbackParagraph);
+                answersSummary.appendChild(listItem);
+            });
+
+            resultsArea.classList.remove('hidden');
+            prevPageButton.classList.add('hidden'); // Esconde navegação
+            nextPageButton.classList.add('hidden'); // Esconde navegação
+            pageInfoSpan.classList.add('hidden'); // Esconde info da página
+            // Hide the running score when final results are displayed
+            const runningScoreEl = document.getElementById('running-score');
+            if (runningScoreEl) runningScoreEl.classList.add('hidden');
+
+            restartButton.classList.remove('hidden'); // Mostra o botão de reiniciar
+        }
+
+        // Navegação para a página anterior
+        prevPageButton.addEventListener('click', () => {
+            if (currentPage > 0) {
+                currentPage--;
+                loadQuiz();
+            }
+        });
+
+        // Navegação para a próxima página
+        nextPageButton.addEventListener('click', () => {
+            const maxPage = Math.ceil(questions.length / questionsPerPage) - 1;
+            if (currentPage < maxPage) {
+                currentPage++;
+                loadQuiz();
+            } else { // Se for a última página, mostrar resultados finais
+                displayFinalResults();
+            }
+        });
+
+
+        // Reinicia o quiz
+        restartButton.addEventListener('click', () => {
+            currentPage = 0; // Volta para a primeira página
+            userAnswers = {}; // Limpa as respostas
+            questions.forEach(q => q.answeredCorrectly = false); // Reset answered correctly flag
+            score = 0; // Reset score
+            
+            pageInfoSpan.classList.remove('hidden'); // Mostra info da página
+            const runningScoreEl = document.getElementById('running-score');
+            if (runningScoreEl) runningScoreEl.classList.remove('hidden'); // Show running score
+
+            loadQuiz();
+        });
+
+        // Carrega o quiz ao iniciar
+        loadQuiz();
+    </script>
+</body>
+</html>
